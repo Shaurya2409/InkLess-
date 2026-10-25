@@ -1,0 +1,329 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f0e2d0;
+  --foreground: #241810;
+  --paper-cream: #fefaf2;
+  --paper-ivory: #faf2e4;
+  --paper-border: #dcd0bd;
+  --spine-shadow: rgba(75, 40, 22, 0.22);
+  --ink-primary: #241810;
+  --ink-secondary: #5a412e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-serif: var(--font-serif), Georgia, Cambria, serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-handwriting: var(--font-caveat), cursive;
+  --font-comic: var(--font-sans), ui-sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+}
+
+/* Desk Surface: Warm French Oak in Golden Evening Sunlight */
+.bg-desk {
+  background-color: #ebdcc9;
+  background-image: 
+    radial-gradient(ellipse at 42% 28%, rgba(255, 215, 145, 0.45) 0%, rgba(245, 180, 115, 0.22) 50%, rgba(220, 175, 145, 0.1) 75%, transparent 100%),
+    radial-gradient(#baa088 1px, transparent 1px);
+  background-size: 100% 100%, 22px 22px;
+}
+
+/* Notebook Parchment Pages in Golden Evening Light */
+.bg-parchment {
+  background-color: #fefaf2;
+  background-image: 
+    radial-gradient(#4a3628 0.55px, transparent 0.55px),
+    linear-gradient(to right, rgba(120, 80, 45, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px, 100% 100%;
+}
+
+/* Faint Ledger Grid for Notebook */
+.notebook-grid {
+  background-image: 
+    radial-gradient(#c8bdab 0.75px, transparent 0.75px);
+  background-size: 18px 18px;
+}
+
+/* Book Spine Center Gutter Shadow */
+.spine-shadow-left {
+  background: linear-gradient(to left, rgba(70, 35, 18, 0.16) 0%, rgba(70, 35, 18, 0.05) 25%, transparent 100%);
+}
+
+.spine-shadow-right {
+  background: linear-gradient(to right, rgba(70, 35, 18, 0.20) 0%, rgba(70, 35, 18, 0.06) 25%, transparent 100%);
+}
+
+/* Wire Rings for Top-Spiral Option A in Warm Antique Brass */
+.wire-spiral-ring {
+  width: 14px;
+  height: 28px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, #6b4d29 0%, #d4af37 40%, #52381c 70%, #a8823d 100%);
+  box-shadow: 1px 2px 4px rgba(60, 40, 20, 0.35);
+}
+
+/* Translucent Washi Tape Strip */
+.washi-tape {
+  background: rgba(228, 217, 197, 0.75);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  backdrop-filter: blur(1px);
+  border-left: 2px dashed rgba(180, 165, 140, 0.4);
+  border-right: 2px dashed rgba(180, 165, 140, 0.4);
+}
+
+/* =========================================================================
+   Pixar / Ratatouille Paper Physics & Tactile Fasteners
+   ========================================================================= */
+
+/* Spring Physics Paper Lift (Cartoony yet physically weighted) */
+.paper-spring-card {
+  transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform, box-shadow;
+  transform-origin: center 85%;
+  contain: layout style;
+}
+
+.paper-spring-card:hover {
+  transform: translateY(-5px) scale(1.025);
+}
+
+/* Dual-Layer Shadow: Comic ink outline + Soft ambient occlusion */
+.pixar-paper-shadow {
+  box-shadow: 
+    2.5px 2.5px 0px rgba(35, 27, 20, 0.85),
+    0 4px 12px rgba(20, 15, 10, 0.10);
+}
+
+.paper-spring-card:hover .pixar-paper-shadow,
+.pixar-paper-shadow:hover {
+  box-shadow: 
+    4px 6px 0px rgba(35, 27, 20, 0.90),
+    0 16px 26px rgba(20, 15, 10, 0.20);
+}
+
+/* Authentic Brown Kraft Tape */
+.kraft-tape-strip {
+  background: #c8b28d;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.08) 0px,
+    rgba(255, 255, 255, 0.08) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  box-shadow: 0 1.5px 4px rgba(25, 20, 15, 0.22);
+  border-left: 2px dashed rgba(120, 95, 65, 0.5);
+  border-right: 2px dashed rgba(120, 95, 65, 0.5);
+}
+
+/* Semi-Translucent Blueprint Drafting Tape */
+.draft-tape-strip {
+  background: rgba(225, 235, 245, 0.78);
+  box-shadow: 0 1.5px 4px rgba(20, 30, 45, 0.18);
+  border-left: 2px dashed rgba(100, 130, 160, 0.45);
+  border-right: 2px dashed rgba(100, 130, 160, 0.45);
+}
+
+/* Storyboard Animation Peg Holes */
+.peghole-punch {
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: #2a231b;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 0.5px 0.5px rgba(255, 255, 255, 0.4);
+}
+
+/* Storyboard Oblong Center Peg */
+.peghole-oblong {
+  width: 15px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #2a231b;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 0.5px 0.5px rgba(255, 255, 255, 0.4);
+}
+
+/* Torn Edge Accent at top of paper notes */
+.torn-edge-fiber {
+  background-image: radial-gradient(circle at 50% 100%, transparent 2.5px, currentColor 3px);
+  background-size: 6px 4px;
+  background-repeat: repeat-x;
+}
+
+/* 3D Perspective Preservation */
+.perspective-container {
+  perspective: 1600px;
+  transform-style: preserve-3d;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Keyframe Animations */
+@keyframes bookOpen {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(-180deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.96) translateY(12px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* =========================================================================
+   Realistic 3D Page Turn Animations (Desktop & Mobile)
+   ========================================================================= */
+
+/* Desktop Forward Page Turn (Right leaf flips over center spine to Left) */
+@keyframes pageTurnRightToLeft {
+  0% {
+    transform: rotateY(0deg) scale(1);
+    box-shadow: -2px 0 8px rgba(60, 30, 10, 0.15);
+  }
+  35% {
+    box-shadow: -15px 0 35px rgba(50, 25, 8, 0.40);
+  }
+  50% {
+    transform: rotateY(-90deg) scale(1.02);
+    box-shadow: 0 0 45px rgba(50, 25, 8, 0.45);
+  }
+  65% {
+    box-shadow: 15px 0 35px rgba(50, 25, 8, 0.40);
+  }
+  100% {
+    transform: rotateY(-180deg) scale(1);
+    box-shadow: 2px 0 8px rgba(60, 30, 10, 0.15);
+  }
+}
+
+/* Desktop Backward Page Turn (Left leaf flips over center spine to Right) */
+@keyframes pageTurnLeftToRight {
+  0% {
+    transform: rotateY(0deg) scale(1);
+    box-shadow: 2px 0 8px rgba(60, 30, 10, 0.15);
+  }
+  35% {
+    box-shadow: 15px 0 35px rgba(50, 25, 8, 0.40);
+  }
+  50% {
+    transform: rotateY(90deg) scale(1.02);
+    box-shadow: 0 0 45px rgba(50, 25, 8, 0.45);
+  }
+  65% {
+    box-shadow: -15px 0 35px rgba(50, 25, 8, 0.40);
+  }
+  100% {
+    transform: rotateY(180deg) scale(1);
+    box-shadow: -2px 0 8px rgba(60, 30, 10, 0.15);
+  }
+}
+
+/* Mobile Notepad Leaf Flip Upwards over wire rings */
+@keyframes notepadFlipUp {
+  0% {
+    transform: rotateX(0deg) translateY(0);
+    opacity: 1;
+    box-shadow: 0 5px 15px rgba(50, 25, 10, 0.2);
+  }
+  50% {
+    transform: rotateX(-65deg) translateY(-25px) scale(0.98);
+    opacity: 0.9;
+    box-shadow: 0 20px 35px rgba(50, 25, 10, 0.35);
+  }
+  100% {
+    transform: rotateX(-115deg) translateY(-70px) scale(0.92);
+    opacity: 0;
+  }
+}
+
+/* Mobile Notepad Leaf Flip Downwards from wire rings */
+@keyframes notepadFlipDown {
+  0% {
+    transform: rotateX(-115deg) translateY(-70px) scale(0.92);
+    opacity: 0;
+  }
+  50% {
+    transform: rotateX(-65deg) translateY(-25px) scale(0.98);
+    opacity: 0.9;
+    box-shadow: 0 20px 35px rgba(50, 25, 10, 0.35);
+  }
+  100% {
+    transform: rotateX(0deg) translateY(0);
+    opacity: 1;
+    box-shadow: 0 5px 15px rgba(50, 25, 10, 0.2);
+  }
+}
+
+.animate-page-turn-next {
+  animation: pageTurnRightToLeft 0.52s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+}
+
+.animate-page-turn-prev {
+  animation: pageTurnLeftToRight 0.52s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  transform-style: preserve-3d;
+  transform-origin: right center;
+}
+
+.animate-notepad-turn-next {
+  animation: notepadFlipUp 0.45s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  transform-origin: top center;
+}
+
+.animate-notepad-turn-prev {
+  animation: notepadFlipDown 0.45s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  transform-origin: top center;
+}
+
+/* =========================================================================
+   Corner 13-Page Thumb Flipbook Styles
+   ========================================================================= */
+
+/* Stepped Multi-Leaf Edge Shadow (13 stacked leaves effect) */
+.flipbook-stack-13 {
+  box-shadow:
+    1px 1px 0px #e6dbcb,
+    2px 2px 0px #ded1bf,
+    3px 3px 0px #d4c5b1,
+    4px 4px 0px #c9b8a2,
+    5px 5px 0px #beab92,
+    6px 6px 0px #b19d84,
+    7px 7px 12px rgba(25, 20, 15, 0.28);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+}
+
+.flipbook-stack-13:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow:
+    1.5px 1.5px 0px #e6dbcb,
+    3px 3px 0px #ded1bf,
+    4.5px 4.5px 0px #d4c5b1,
+    6px 6px 0px #c9b8a2,
+    7.5px 7.5px 0px #beab92,
+    9px 9px 0px #b19d84,
+    10px 10px 18px rgba(25, 20, 15, 0.38);
+}
+
+/* 3D Corner Leaf Perspective */
+.flipbook-perspective {
+  perspective: 600px;
+  transform-style: preserve-3d;
+}
