@@ -35,6 +35,20 @@ const UserSchema = new Schema(
       },
     ],
 
+    friendRequests: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    sentRequests: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
     hiddenNotes: [
       {
         type: Schema.Types.ObjectId,

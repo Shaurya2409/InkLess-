@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { success: false },
+        { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
@@ -54,30 +54,53 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (
-      currentUser.following.includes(targetUser._id)
-    ) {
+    // Already following check
+    const isAlreadyFollowing = (currentUser.following || []).some(
+      (id: { toString(): string }) => id.toString() === targetUserId
+    );
+    if (isAlreadyFollowing) {
       return NextResponse.json({
         success: true,
+        status: "following",
+        message: "Already subscribed to this author.",
       });
     }
 
-    currentUser.following.push(targetUser._id);
-    targetUser.followers.push(currentUser._id);
+    // Already requested check
+    const isAlreadyRequested = (currentUser.sentRequests || []).some(
+      (id: { toString(): string }) => id.toString() === targetUserId
+    );
+    if (isAlreadyRequested) {
+      return NextResponse.json({
+        success: true,
+        status: "requested",
+        message: "Companion request already pending.",
+      });
+    }
+
+    // Initialize arrays if missing
+    if (!currentUser.sentRequests) currentUser.sentRequests = [];
+    if (!targetUser.friendRequests) targetUser.friendRequests = [];
+
+    // Add to pending requests
+    currentUser.sentRequests.push(targetUser._id);
+    targetUser.friendRequests.push(currentUser._id);
 
     await currentUser.save();
     await targetUser.save();
 
     return NextResponse.json({
       success: true,
+      status: "requested",
+      message: "Companion request sent successfully.",
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("Error in follow/request:", err);
 
     return NextResponse.json(
       {
         success: false,
+        message: "Failed to send companion request.",
       },
       {
         status: 500,

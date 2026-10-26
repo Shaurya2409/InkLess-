@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { FaBookOpen, FaFeatherAlt, FaUsers, FaUser } from "react-icons/fa";
 import Link from "next/link";
 
@@ -8,6 +9,29 @@ type MobileNavProps = {
 };
 
 export default function MobileNav({ onNewNote }: MobileNavProps) {
+  const [requestCount, setRequestCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkPendingRequests() {
+      try {
+        const res = await fetch("/api/follow/list");
+        const data = await res.json();
+        if (active && data.success && Array.isArray(data.requests)) {
+          setRequestCount(data.requests.length);
+        }
+      } catch {
+        // silent fail
+      }
+    }
+
+    checkPendingRequests();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <div
       className="
@@ -26,14 +50,20 @@ export default function MobileNav({ onNewNote }: MobileNavProps) {
       <button
         onClick={onNewNote}
         className="flex flex-col items-center gap-1 hover:text-[#ffd6a5] active:scale-90 transition-all cursor-pointer"
+        title="Pin thought"
       >
         <div className="bg-[#fefaf2] p-3 rounded-full mt-[-22px] border-2 border-[#562f17] shadow-[0_4px_14px_rgba(50,25,10,0.35)] text-[#784628]">
           <FaFeatherAlt size={16} />
         </div>
       </button>
 
-      <Link href="/staff" className="flex flex-col items-center gap-1 hover:text-[#ffd6a5] active:scale-90 transition-all">
-        <FaUsers size={18} />
+      <Link href="/staff" className="relative flex flex-col items-center gap-1 hover:text-[#ffd6a5] active:scale-90 transition-all">
+        <div className="relative">
+          <FaUsers size={18} />
+          {requestCount > 0 && (
+            <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-[#f39c12] rounded-full ring-2 ring-[#784628] animate-pulse" />
+          )}
+        </div>
         <span className="text-[10px] font-sans tracking-wider">Readers</span>
       </Link>
       

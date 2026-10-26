@@ -1,12 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { FaSearch, FaTimes, FaSpinner, FaUsers, FaFeatherAlt, FaUserCheck, FaUserPlus } from "react-icons/fa";
+import {
+  FaSearch,
+  FaTimes,
+  FaSpinner,
+  FaUsers,
+  FaFeatherAlt,
+  FaUserCheck,
+  FaUserPlus,
+  FaHourglassHalf,
+} from "react-icons/fa";
 
 export type CompanionUser = {
   id: string;
   username: string;
   isFollowing: boolean;
+  relationship: "following" | "requested" | "none";
   followersCount: number;
   followingCount: number;
   thoughtsCount: number;
@@ -91,50 +101,117 @@ export default function CompanionSearch({
     fetchUsers("");
   };
 
-  const handleToggleFollow = async (user: CompanionUser) => {
-    const isCurrentlyFollowing = user.isFollowing;
-    const endpoint = isCurrentlyFollowing ? "/api/follow/unfollow" : "/api/follow/follow";
+  const handleAction = async (user: CompanionUser) => {
+    const rel = user.relationship || (user.isFollowing ? "following" : "none");
 
-    // Optimistic UI update
-    setResults((prev) =>
-      prev.map((u) => {
-        if (u.id === user.id) {
-          return {
-            ...u,
-            isFollowing: !isCurrentlyFollowing,
-            followersCount: isCurrentlyFollowing ? Math.max(0, u.followersCount - 1) : u.followersCount + 1,
-          };
-        }
-        return u;
-      })
-    );
+    if (rel === "following") {
+      if (!confirm(`Unsubscribe from companion @${user.username}?`)) return;
 
-    try {
-      setActionLoadingId(user.id);
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId: user.id }),
-      });
-
-      const data = await res.json();
-      if (!data.success) {
-        // Revert on failure
-        setResults((prev) =>
-          prev.map((u) => (u.id === user.id ? { ...u, isFollowing: isCurrentlyFollowing } : u))
-        );
-        alert(data.message || "Failed to update follow status.");
-      } else if (onFollowChange) {
-        onFollowChange();
-      }
-    } catch (err) {
-      console.error(err);
-      // Revert on error
+      // Optimistic update
       setResults((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, isFollowing: isCurrentlyFollowing } : u))
+        prev.map((u) =>
+          u.id === user.id
+            ? {
+                ...u,
+                relationship: "none",
+                isFollowing: false,
+                followersCount: Math.max(0, u.followersCount - 1),
+              }
+            : u
+        )
       );
-    } finally {
-      setActionLoadingId(null);
+
+      try {
+        setActionLoadingId(user.id);
+        const res = await fetch("/api/follow/unfollow", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetUserId: user.id }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          // Revert
+          setResults((prev) =>
+            prev.map((u) => (u.id === user.id ? user : u))
+          );
+          alert(data.message || "Failed to unfollow.");
+        } else if (onFollowChange) {
+          onFollowChange();
+        }
+      } catch (err) {
+        console.error(err);
+        setResults((prev) =>
+          prev.map((u) => (u.id === user.id ? user : u))
+        );
+      } finally {
+        setActionLoadingId(null);
+      }
+    } else if (rel === "requested") {
+      if (!confirm(`Cancel companion request to @${user.username}?`)) return;
+
+      // Optimistic update
+      setResults((prev) =>
+        prev.map((u) =>
+          u.id === user.id ? { ...u, relationship: "none" } : u
+        )
+      );
+
+      try {
+        setActionLoadingId(user.id);
+        const res = await fetch("/api/follow/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetUserId: user.id }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setResults((prev) =>
+            prev.map((u) => (u.id === user.id ? user : u))
+          );
+          alert(data.message || "Failed to cancel request.");
+        } else if (onFollowChange) {
+          onFollowChange();
+        }
+      } catch (err) {
+        console.error(err);
+        setResults((prev) =>
+          prev.map((u) => (u.id === user.id ? user : u))
+        );
+      } finally {
+        setActionLoadingId(null);
+      }
+    } else {
+      // Send companion request
+      setResults((prev) =>
+        prev.map((u) =>
+          u.id === user.id ? { ...u, relationship: "requested" } : u
+        )
+      );
+
+      try {
+        setActionLoadingId(user.id);
+        const res = await fetch("/api/follow/follow", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetUserId: user.id }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          setResults((prev) =>
+            prev.map((u) => (u.id === user.id ? user : u))
+          );
+          alert(data.message || "Failed to send request.");
+        } else if (onFollowChange) {
+          onFollowChange();
+        }
+      } catch (err) {
+        console.error(err);
+        setResults((prev) =>
+          prev.map((u) => (u.id === user.id ? user : u))
+        );
+      } finally {
+        setActionLoadingId(null);
+      }
     }
   };
 
@@ -205,6 +282,7 @@ export default function CompanionSearch({
           <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
             {results.map((user) => {
               const isLoadingThis = actionLoadingId === user.id;
+              const rel = user.relationship || (user.isFollowing ? "following" : "none");
 
               return (
                 <div
@@ -240,27 +318,41 @@ export default function CompanionSearch({
                     </div>
                   </div>
 
-                  {/* Right: Follow / Following Toggle Button */}
+                  {/* Right: Request State Button */}
                   <button
                     type="button"
                     disabled={isLoadingThis}
-                    onClick={() => handleToggleFollow(user)}
+                    onClick={() => handleAction(user)}
                     className={`
                       shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-serif font-semibold
                       transition-all cursor-pointer shadow-xs disabled:opacity-50
                       ${
-                        user.isFollowing
+                        rel === "following"
                           ? "bg-[#efe8d8] text-[#5c5245] border border-[#cfc4b4] hover:bg-[#e4dcce] hover:text-[#2c251e]"
+                          : rel === "requested"
+                          ? "bg-[#ecd5ad] text-[#6b4516] border border-[#cb9f64] hover:bg-[#e0c294]"
                           : "bg-[#784628] text-[#fefaf2] border border-[#562f17] hover:bg-[#8d5431]"
                       }
                     `}
+                    title={
+                      rel === "following"
+                        ? "Subscribed companion. Click to unfollow."
+                        : rel === "requested"
+                        ? "Request pending approval. Click to cancel."
+                        : "Send companion follow request."
+                    }
                   >
                     {isLoadingThis ? (
                       <FaSpinner size={10} className="animate-spin" />
-                    ) : user.isFollowing ? (
+                    ) : rel === "following" ? (
                       <>
                         <FaUserCheck size={11} className="text-[#5c5245]" />
                         <span>Subscribed</span>
+                      </>
+                    ) : rel === "requested" ? (
+                      <>
+                        <FaHourglassHalf size={10} className="text-[#875519] animate-pulse" />
+                        <span>Requested</span>
                       </>
                     ) : (
                       <>

@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q")?.trim() || "";
 
-    const currentUser = await User.findById(currentUserId).select("following");
+    const currentUser = await User.findById(currentUserId).select("following sentRequests");
 
     if (!currentUser) {
       return NextResponse.json(
@@ -41,6 +41,10 @@ export async function GET(req: NextRequest) {
 
     const followingIds = new Set(
       (currentUser.following || []).map((id: Types.ObjectId) => id.toString())
+    );
+
+    const sentRequestIds = new Set(
+      (currentUser.sentRequests || []).map((id: Types.ObjectId) => id.toString())
     );
 
     let users: Array<Pick<LeanUser, "_id" | "username" | "followers" | "following">> = [];
@@ -107,14 +111,26 @@ export async function GET(req: NextRequest) {
       countMap.set(nc._id.toString(), nc.count);
     });
 
-    const formattedUsers = users.map((user) => ({
-      id: user._id.toString(),
-      username: user.username,
-      isFollowing: followingIds.has(user._id.toString()),
-      followersCount: user.followers?.length || 0,
-      followingCount: user.following?.length || 0,
-      thoughtsCount: countMap.get(user._id.toString()) || 0,
-    }));
+    const formattedUsers = users.map((user) => {
+      const uId = user._id.toString();
+      const isFollowing = followingIds.has(uId);
+      const isRequested = sentRequestIds.has(uId);
+      const relationship: "following" | "requested" | "none" = isFollowing
+        ? "following"
+        : isRequested
+        ? "requested"
+        : "none";
+
+      return {
+        id: uId,
+        username: user.username,
+        isFollowing,
+        relationship,
+        followersCount: user.followers?.length || 0,
+        followingCount: user.following?.length || 0,
+        thoughtsCount: countMap.get(uId) || 0,
+      };
+    });
 
     return NextResponse.json(
       {

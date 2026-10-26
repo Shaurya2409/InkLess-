@@ -34,8 +34,8 @@ export async function GET() {
     };
 
     const user = await User.findById(decoded.userId)
-      .select("followers following")
-      .lean<Pick<LeanUser, "followers" | "following">>();
+      .select("followers following friendRequests")
+      .lean<Pick<LeanUser, "followers" | "following" | "friendRequests">>();
 
     if (!user) {
       return NextResponse.json(
@@ -51,15 +51,17 @@ export async function GET() {
 
     const followerIds: mongoose.Types.ObjectId[] = user.followers || [];
     const followingIds: mongoose.Types.ObjectId[] = user.following || [];
+    const requestIds: mongoose.Types.ObjectId[] = user.friendRequests || [];
 
     const allIds = Array.from(
       new Set([
         ...followerIds.map((id) => id.toString()),
         ...followingIds.map((id) => id.toString()),
+        ...requestIds.map((id) => id.toString()),
       ])
     ).map((id) => new mongoose.Types.ObjectId(id));
 
-    // Aggregate total recipes/notes created by each user (activity level)
+    // Aggregate total thoughts created by each user (activity level)
     const noteCounts = await Note.aggregate([
       { $match: { author: { $in: allIds } } },
       { $group: { _id: "$author", count: { $sum: 1 } } },
@@ -70,7 +72,7 @@ export async function GET() {
       countMap.set(nc._id.toString(), nc.count);
     });
 
-    // Fetch user details for each staff member
+    // Fetch user details for companions and requesters
     const userDocs = await User.find(
       { _id: { $in: allIds } },
       { username: 1, email: 1, createdAt: 1 }
@@ -93,7 +95,7 @@ export async function GET() {
       const u = userMap.get(sId);
       return {
         _id: sId,
-        username: u?.username || "Unknown Chef",
+        username: u?.username || "Unknown Scribe",
         email: u?.email || "",
         createdAt: u?.createdAt || new Date(),
         recipeCount: countMap.get(sId) || 0,
@@ -106,7 +108,7 @@ export async function GET() {
       const u = userMap.get(sId);
       return {
         _id: sId,
-        username: u?.username || "Unknown Chef",
+        username: u?.username || "Unknown Scribe",
         email: u?.email || "",
         createdAt: u?.createdAt || new Date(),
         recipeCount: countMap.get(sId) || 0,
@@ -114,14 +116,26 @@ export async function GET() {
       };
     });
 
+    const requests = requestIds.map((id) => {
+      const sId = id.toString();
+      const u = userMap.get(sId);
+      return {
+        _id: sId,
+        username: u?.username || "Unknown Scribe",
+        email: u?.email || "",
+        createdAt: u?.createdAt || new Date(),
+        recipeCount: countMap.get(sId) || 0,
+      };
+    });
+
     return NextResponse.json({
       success: true,
       followers,
       following,
+      requests,
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("Error in follow/list:", err);
 
     return NextResponse.json(
       {

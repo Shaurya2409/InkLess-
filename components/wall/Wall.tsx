@@ -32,7 +32,7 @@ export default function Wall({
   loadNotes,
   onNewNote,
 }: WallProps) {
-  // Desktop spread: 1, 2, 3...
+  // Desktop spread: 0, 1, 2...
   const [spreadIndex, setSpreadIndex] = useState(0);
   // Mobile single page: 0, 1, 2...
   const [mobilePageIndex, setMobilePageIndex] = useState(0);
@@ -81,20 +81,33 @@ export default function Wall({
     };
   }, []);
 
-  // Dynamic Spreads and Pages based on sticky notes (Infinite notebook expanding as notes are added)
+  // Dynamic Spreads and Pages based on sticky notes
+  // Automatically unlocks a fresh new spread/page whenever current slots fill up
   const totalSpreads = useMemo(() => {
-    const fromNotes = Math.ceil(notes.length / NOTES_PER_SPREAD);
+    const fromNotes = Math.floor(notes.length / NOTES_PER_SPREAD) + 1;
     return Math.max(1, fromNotes);
   }, [notes.length]);
 
   const totalMobilePages = useMemo(() => {
-    const fromNotes = Math.ceil(notes.length / NOTES_PER_PAGE);
+    const fromNotes = Math.floor(notes.length / NOTES_PER_PAGE) + 1;
     return Math.max(1, fromNotes);
   }, [notes.length]);
 
   // Derived in-bounds spread/page indices without triggering cascading render effects
   const activeSpreadIndex = Math.min(spreadIndex, Math.max(0, totalSpreads - 1));
   const activeMobilePageIndex = Math.min(mobilePageIndex, Math.max(0, totalMobilePages - 1));
+
+  // Auto-advance to the newest spread/page when a new note is pinned
+  const prevNotesLengthRef = useRef(notes.length);
+  useEffect(() => {
+    if (notes.length > prevNotesLengthRef.current) {
+      const targetSpread = Math.floor((notes.length - 1) / NOTES_PER_SPREAD);
+      setSpreadIndex(targetSpread);
+      const targetPage = Math.floor((notes.length - 1) / NOTES_PER_PAGE);
+      setMobilePageIndex(targetPage);
+    }
+    prevNotesLengthRef.current = notes.length;
+  }, [notes.length]);
 
   // Rapid Page Riffling Engine (makes stickman dance at ~18 fps!)
   const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -113,12 +126,9 @@ export default function Wall({
 
   const startRiffle = useCallback(
     (dir: "next" | "prev" = "next") => {
-      // Disallow riffling if notebook has only 1 spread / page
       if (totalSpreads <= 1 && totalMobilePages <= 1) return;
       stopRiffle();
-      // Require holding for 220ms before starting rapid 18 fps flicking
       holdTimeoutRef.current = setTimeout(() => {
-        // If an animation is in flight, cancel it immediately so riffling takes over smoothly
         if (flipTimeoutRef.current) {
           clearTimeout(flipTimeoutRef.current);
           flipTimeoutRef.current = null;
@@ -157,16 +167,13 @@ export default function Wall({
 
   // Handle Desktop Spread Flipping with Authentic 3D Page Turn
   const handleNextSpread = useCallback(() => {
-    // If only 1 spread or already on last spread, do not flip
     if (totalSpreads <= 1 || activeSpreadIndex >= totalSpreads - 1) return;
 
-    // If currently rapid-riffling, step immediately without 500ms animation
     if (riffleIntervalRef.current) {
       setSpreadIndex((prev) => Math.min(totalSpreads - 1, prev + 1));
       return;
     }
 
-    // If an existing flip is running, commit it immediately so rapid clicks don't freeze
     if (flipTimeoutRef.current) {
       clearTimeout(flipTimeoutRef.current);
       flipTimeoutRef.current = null;
@@ -334,7 +341,6 @@ export default function Wall({
           if (totalSpreads > 1) handleNextSpread();
           if (totalMobilePages > 1) handleNextMobilePage();
         } else if (!riffleIntervalRef.current && (totalSpreads > 1 || totalMobilePages > 1)) {
-          // Immediately start rapid flicking on keyboard repeat
           stopRiffle();
           if (flipTimeoutRef.current) {
             clearTimeout(flipTimeoutRef.current);
@@ -652,6 +658,22 @@ export default function Wall({
       {/* Golden evening sunlight ambient glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[750px] bg-[#f5b870]/25 rounded-full blur-[160px] pointer-events-none" />
 
+      {/* Mobile Top Pin Thought Quick Action */}
+      {onNewNote && (
+        <button
+          type="button"
+          onClick={onNewNote}
+          className="
+            md:hidden flex items-center justify-center gap-1.5 px-4 py-2 rounded-full
+            bg-[#fefaf2] text-[#2c1d11] border-2 border-[#8a502c] shadow-md
+            hover:bg-[#fff7ea] active:scale-95 transition-all cursor-pointer font-serif font-bold text-xs mb-3 z-20
+          "
+        >
+          <FaFeatherAlt size={11} className="text-[#844f2e]" />
+          <span>+ Pin Thought</span>
+        </button>
+      )}
+
       {/* 
         ===========================================================
         DESKTOP INTERFACE: OPTION B (Hardcover Two-Page Bound Spread)
@@ -666,6 +688,24 @@ export default function Wall({
           ${flippingLeaf?.direction === "prev" ? "scale-[0.995] [transform:rotateY(1deg)]" : ""}
         `}
       >
+        {/* Floating Quick-Pin Quill Action Button on Desk/Cover */}
+        {onNewNote && (
+          <button
+            type="button"
+            onClick={onNewNote}
+            className="
+              hidden md:flex items-center gap-2 px-4 py-2 rounded-full
+              bg-[#fefaf2] text-[#2c1d11] border-2 border-[#8a502c] shadow-[0_4px_16px_rgba(40,20,10,0.25)]
+              hover:bg-[#fff7ea] hover:scale-105 active:scale-95 transition-all cursor-pointer font-serif font-bold text-xs
+              absolute -top-4 right-8 z-40
+            "
+            title="Pin a new thought anytime"
+          >
+            <FaFeatherAlt size={13} className="text-[#844f2e]" />
+            <span>+ Pin Thought</span>
+          </button>
+        )}
+
         {/* Book Outer Leather Rim & Edge Pages Thickness */}
         <div className="absolute -inset-1 rounded-[26px] border border-[#9c5f37]/50 pointer-events-none opacity-60" />
 
@@ -850,13 +890,24 @@ export default function Wall({
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#784628] text-[#fefaf2] border border-[#562f17] hover:bg-[#8d5431] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md"
         >
           <FaChevronLeft size={12} />
-          <span>Previous Spread (Leaves {Math.max(1, (activeSpreadIndex - 1) * 2 + 1)}–{Math.max(2, (activeSpreadIndex - 1) * 2 + 2)})</span>
+          <span>Previous Spread</span>
         </button>
 
-        <div className="flex items-center gap-3 font-sans text-[11px] text-[#5e3b22] tracking-wider uppercase font-semibold">
-          <span>Drag edge or press <kbd className="px-1.5 py-0.5 rounded bg-[#fdf6ed] text-[#4d2f1a] border border-[#d6beaa] shadow-xs">←</kbd> <kbd className="px-1.5 py-0.5 rounded bg-[#fdf6ed] text-[#4d2f1a] border border-[#d6beaa] shadow-xs">→</kbd> to turn leaves</span>
+        <div className="flex items-center gap-4 font-sans text-[11px] text-[#5e3b22] tracking-wider uppercase font-semibold">
+          <span>Drag edge or press <kbd className="px-1.5 py-0.5 rounded bg-[#fdf6ed] text-[#4d2f1a] border border-[#d6beaa] shadow-xs">←</kbd> <kbd className="px-1.5 py-0.5 rounded bg-[#fdf6ed] text-[#4d2f1a] border border-[#d6beaa] shadow-xs">→</kbd></span>
           <span>•</span>
-          <span>Spread {activeSpreadIndex + 1}{totalSpreads <= 1 ? " • Pin 12+ thoughts to expand" : ""}</span>
+          {onNewNote && (
+            <button
+              type="button"
+              onClick={onNewNote}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2e1d11] text-[#fdebd9] border border-[#562f17] hover:bg-[#3f2717] hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-sm font-serif font-bold text-xs lowercase"
+            >
+              <FaFeatherAlt size={10} className="text-[#f5d5b8]" />
+              <span className="capitalize">+ Pin Thought</span>
+            </button>
+          )}
+          <span>•</span>
+          <span>Spread {activeSpreadIndex + 1}</span>
         </div>
 
         <button
@@ -865,7 +916,7 @@ export default function Wall({
           onClick={handleNextSpread}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#784628] text-[#fefaf2] border border-[#562f17] hover:bg-[#8d5431] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md"
         >
-          <span>Next Spread (Leaves {(activeSpreadIndex + 1) * 2 + 1}–{(activeSpreadIndex + 1) * 2 + 2})</span>
+          <span>Next Spread</span>
           <FaChevronRight size={12} />
         </button>
       </div>

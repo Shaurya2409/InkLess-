@@ -25,6 +25,7 @@ export default function Sidebar({ onNewNote }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [requestCount, setRequestCount] = useState(0);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseEnter = useCallback(() => {
@@ -53,6 +54,28 @@ export default function Sidebar({ onNewNote }: SidebarProps) {
     window.addEventListener("mousemove", handleGlobalMouseMove);
     return () => window.removeEventListener("mousemove", handleGlobalMouseMove);
   }, [handleMouseEnter]);
+
+  // Check incoming requests count
+  useEffect(() => {
+    let active = true;
+
+    async function checkPendingRequests() {
+      try {
+        const res = await fetch("/api/follow/list");
+        const data = await res.json();
+        if (active && data.success && Array.isArray(data.requests)) {
+          setRequestCount(data.requests.length);
+        }
+      } catch {
+        // Ignore network / auth errors silently
+      }
+    }
+
+    checkPendingRequests();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const showSidebar = isOpen || isPinned;
 
@@ -92,6 +115,9 @@ export default function Sidebar({ onNewNote }: SidebarProps) {
           <span className="[writing-mode:vertical-rl] font-serif text-[10px] tracking-widest uppercase text-[#edd0b5] font-bold">
             Menu
           </span>
+          {requestCount > 0 && (
+            <span className="w-2 h-2 rounded-full bg-[#f39c12] animate-pulse" />
+          )}
           <FaChevronRight size={10} className="text-[#f5d5b8] opacity-75 group-hover:translate-x-0.5 transition-transform" />
         </button>
       )}
@@ -186,9 +212,16 @@ export default function Sidebar({ onNewNote }: SidebarProps) {
             </button>
 
             <Link href="/staff" className="block">
-              <button className="flex items-center gap-3.5 text-[#edd0b5] hover:text-[#fff7ee] hover:bg-[#5e351d]/50 hover:translate-x-1 transition-all duration-150 w-full text-left cursor-pointer py-2.5 px-3.5 rounded-xl">
-                <FaUsers size={16} className="text-[#f5d5b8]" />
-                <span className="font-medium">Companions</span>
+              <button className="flex items-center justify-between text-[#edd0b5] hover:text-[#fff7ee] hover:bg-[#5e351d]/50 hover:translate-x-1 transition-all duration-150 w-full text-left cursor-pointer py-2.5 px-3.5 rounded-xl">
+                <div className="flex items-center gap-3.5">
+                  <FaUsers size={16} className="text-[#f5d5b8]" />
+                  <span className="font-medium">Companions</span>
+                </div>
+                {requestCount > 0 && (
+                  <span className="bg-[#c46927] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-xs animate-pulse">
+                    {requestCount}
+                  </span>
+                )}
               </button>
             </Link>
 

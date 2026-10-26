@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { success: false },
+        { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
@@ -42,11 +42,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    currentUser.following = currentUser.following.filter(
+    // Remove from following/followers
+    currentUser.following = (currentUser.following || []).filter(
       (id: { toString(): string }) => id.toString() !== targetUserId
     );
 
-    targetUser.followers = targetUser.followers.filter(
+    targetUser.followers = (targetUser.followers || []).filter(
+      (id: { toString(): string }) => id.toString() !== decoded.userId
+    );
+
+    // Also safely clean any pending request linkages
+    currentUser.sentRequests = (currentUser.sentRequests || []).filter(
+      (id: { toString(): string }) => id.toString() !== targetUserId
+    );
+    currentUser.friendRequests = (currentUser.friendRequests || []).filter(
+      (id: { toString(): string }) => id.toString() !== targetUserId
+    );
+    targetUser.sentRequests = (targetUser.sentRequests || []).filter(
+      (id: { toString(): string }) => id.toString() !== decoded.userId
+    );
+    targetUser.friendRequests = (targetUser.friendRequests || []).filter(
       (id: { toString(): string }) => id.toString() !== decoded.userId
     );
 
@@ -55,14 +70,15 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      message: "Unsubscribed successfully.",
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("Error in unfollow:", err);
 
     return NextResponse.json(
       {
         success: false,
+        message: "Failed to unfollow.",
       },
       {
         status: 500,

@@ -8,6 +8,8 @@ export interface LeanUser {
   password: string;
   followers: Types.ObjectId[];
   following: Types.ObjectId[];
+  friendRequests?: Types.ObjectId[];
+  sentRequests?: Types.ObjectId[];
   hiddenNotes: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
