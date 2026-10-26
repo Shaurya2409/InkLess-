@@ -233,7 +233,7 @@ function StickyNote({
       {/* Subtle Bottom Technical / Atelier Stamp */}
       <div className="flex justify-between items-center pt-1 border-t border-[#2a2219]/10 text-[9px] font-mono text-[#786c5e] tracking-wider uppercase z-10">
         <span className="font-bold">SLOT #{slotIndex + 1}</span>
-        <span className="opacity-80">24H INK</span>
+        <span className="opacity-80">6H INK</span>
       </div>
     </div>
   );

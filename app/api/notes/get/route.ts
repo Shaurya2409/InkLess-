@@ -10,6 +10,8 @@ import type { LeanUser, LeanNote } from "@/lib/types";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+
 export async function GET() {
   try {
     await connectDB();
@@ -57,13 +59,24 @@ export async function GET() {
       );
     }
 
+    const sixHoursAgo = new Date(Date.now() - SIX_HOURS_MS);
+
+    // Non-blocking cleanup of expired notes older than 6 hours
+    Note.deleteMany({
+      createdAt: { $lte: sixHoursAgo },
+    }).catch((err) => console.error("Background note purge error:", err));
+
     // Following-only filter: only notes from self or authors this user actively follows
     const userHiddenNotes = Array.isArray(user.hiddenNotes) ? user.hiddenNotes : [];
     const allowedAuthorIds = [user._id, ...(user.following || [])];
 
+    // Strict 6-hour ephemeral query: note must be < 6 hours old and unexpired
     const notes = await Note.find({
       author: {
         $in: allowedAuthorIds,
+      },
+      createdAt: {
+        $gt: sixHoursAgo,
       },
       expiresAt: {
         $gt: new Date(),
@@ -117,13 +130,13 @@ export async function GET() {
         },
       }
     );
-  } catch (error) {
-    console.error("GET /api/notes/get error:", error);
+  } catch (err) {
+    console.error("GET /api/notes/get error:", err);
 
     return NextResponse.json(
       {
         success: false,
-        message: "Unable to load notes.",
+        message: "Internal Server Error",
       },
       {
         status: 500,

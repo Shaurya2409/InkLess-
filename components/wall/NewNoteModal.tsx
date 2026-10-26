@@ -149,7 +149,7 @@ export default function NewNoteModal({
         {/* Footer: Ephemeral Note Indicator & Character Counter */}
         <div className="flex justify-between items-center mt-2 text-[10px] font-mono text-[#6e5d4a]">
           <span className="font-semibold tracking-wider">
-            24H EPHEMERAL INK
+            6H EPHEMERAL INK
           </span>
           <span className="font-bold">
             {text.length}/{MAX_CHARS}

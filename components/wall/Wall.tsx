@@ -63,15 +63,44 @@ export default function Wall({
   } | null>(null);
   const mobileFlipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 15-Minute Auto-Reload Cycle
+  // 5-Minute Background Auto-Reload Cycle
   useEffect(() => {
-    const FIFTEEN_MINUTES = 15 * 60 * 1000;
+    const FIVE_MINUTES = 5 * 60 * 1000;
     const interval = setInterval(() => {
       loadNotes();
-    }, FIFTEEN_MINUTES);
+    }, FIVE_MINUTES);
 
     return () => clearInterval(interval);
   }, [loadNotes]);
+
+  // Real-time Expiration Trigger: reloads notes precisely when the earliest note reaches 6 hours
+  useEffect(() => {
+    if (!notes || notes.length === 0) return;
+
+    const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    let earliestRemaining = Infinity;
+
+    for (const note of notes) {
+      const createdTime = new Date(note.createdAt).getTime();
+      const expiresTime = createdTime + SIX_HOURS_MS;
+      const remaining = expiresTime - now;
+
+      if (remaining > 0 && remaining < earliestRemaining) {
+        earliestRemaining = remaining;
+      }
+    }
+
+    if (earliestRemaining !== Infinity) {
+      // Trigger reload at the precise moment of note expiration (plus 500ms safety buffer)
+      const timer = setTimeout(() => {
+        loadNotes();
+      }, Math.max(1000, earliestRemaining + 500));
+
+      return () => clearTimeout(timer);
+    }
+  }, [notes, loadNotes]);
 
   // Clean up any pending animation timeouts on unmount
   useEffect(() => {
@@ -565,7 +594,7 @@ export default function Wall({
               Leaf {leafNumber}
             </span>
             <span className="text-[10px] font-sans tracking-widest uppercase opacity-75">
-              Auto-refreshes every 15m
+              Auto-syncs active ink
             </span>
           </div>
 
@@ -630,7 +659,7 @@ export default function Wall({
         {/* Mobile Footer with Corner Flipbook */}
         <div className="flex justify-between items-end pt-3 text-[10px] font-sans text-[#786c5e]">
           <div className="flex flex-col gap-0.5 pb-1">
-            <span>15m auto-reload</span>
+            <span>Active ink sync</span>
             <span>6 notes/leaf</span>
           </div>
 

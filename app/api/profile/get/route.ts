@@ -7,6 +7,8 @@ import User from "@/models/User";
 import Note from "@/models/Note";
 import type { LeanUser } from "@/lib/types";
 
+const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+
 export async function GET() {
   try {
     await connectDB();
@@ -48,8 +50,13 @@ export async function GET() {
       );
     }
 
+    const sixHoursAgo = new Date(Date.now() - SIX_HOURS_MS);
+
     const totalNotes = await Note.countDocuments({
       author: user._id,
+      createdAt: {
+        $gt: sixHoursAgo,
+      },
       expiresAt: {
         $gt: new Date(),
       },

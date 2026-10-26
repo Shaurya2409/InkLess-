@@ -11,6 +11,8 @@ import type { LeanUser, LeanNote } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
@@ -73,10 +75,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Prevent duplicate note
+    const sixHoursAgo = new Date(Date.now() - SIX_HOURS_MS);
+
+    // Prevent duplicate active note (within 6-hour lifespan)
     const duplicate = await Note.findOne({
       author: user._id,
       text,
+      createdAt: { $gt: sixHoursAgo },
       expiresAt: { $gt: new Date() },
     });
 
@@ -98,6 +103,9 @@ export async function POST(req: NextRequest) {
           author: {
             $in: allowedAuthorIds,
           },
+          createdAt: {
+            $gt: sixHoursAgo,
+          },
           expiresAt: {
             $gt: new Date(),
           },
@@ -114,8 +122,8 @@ export async function POST(req: NextRequest) {
       y = position.y;
     }
 
-    // 24-hour expiry (survives overnight across all devices)
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Strict 6-hour ephemeral lifespan
+    const expiresAt = new Date(Date.now() + SIX_HOURS_MS);
 
     const note = await Note.create({
       author: user._id,
